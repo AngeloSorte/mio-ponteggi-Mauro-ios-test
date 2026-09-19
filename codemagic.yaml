@@ -1,0 +1,57 @@
+workflows:
+  ios-build:
+    name: iOS Build (Compose Multiplatform)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      java: 21
+      vars:
+        XCODE_PROJECT: "iosApp/iosApp.xcodeproj"
+        XCODE_SCHEME: "iosApp"
+        BUNDLE_ID: "com.aistudio.unipointponteggi.iosApp"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: '*'
+          include: true
+          source: true
+    scripts:
+      - name: Make Gradle wrapper executable
+        script: |
+          chmod +x gradlew
+      - name: Check Java and Gradle environment
+        script: |
+          java -version
+          ./gradlew --version
+      - name: Build Compose Multiplatform iOS framework
+        script: |
+          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode \
+            -Pkotlin.native.enableDependencyPropagation=false \
+            -Dorg.gradle.internal.http.socketTimeout=60000 || ./gradlew :composeApp:assemble
+      - name: Build iOS Application (Xcode)
+        script: |
+          xcodebuild build \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY=""
+      - name: Export artifacts package
+        script: |
+          mkdir -p build/ios/products
+          find /Users/builder/Library/Developer/Xcode/DerivedData -name "*.app" -exec cp -R {} build/ios/products/ \; 2>/dev/null || true
+    artifacts:
+      - build/ios/products/*.app
+      - composeApp/build/xcode-frameworks/**/*.framework
+      - composeApp/build/bin/iosArm64/**/*.framework
+    publishing:
+      email:
+        recipients:
+          - angelosorte1@gmail.com
+        notify:
+          success: true
+          failure: true

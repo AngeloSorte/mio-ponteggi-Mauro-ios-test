@@ -1,0 +1,7 @@
+{
+  "name": "Unipoint Ponteggi",
+  "description": "App moderna per noleggio ponteggi, configuratore 3D, rifacimento tetti, perizie drone e prenotazioni.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
